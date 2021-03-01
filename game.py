@@ -30,14 +30,15 @@ def load_image(name, color_key=None):
 
 def start_screen():
     intro_text = ["Перемещение героя", "",
-                  "Герой двигается!"]
+                  "Дополнительные уровни", 'Введите название', 'желаемого уровня в',
+                                           'стандартный поток ввода']
 
     fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
     text_coord = 50
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('white'))
+        string_rendered = font.render(line, 1, pygame.Color('black'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -57,16 +58,21 @@ def start_screen():
 
 
 def load_level(filename):
+    global running
     filename = "data/" + filename
-    # читаем уровень, убирая символы перевода строки
-    with open(filename, 'r') as mapFile:
-        level_map = [line.strip() for line in mapFile]
+    try:
+        # читаем уровень, убирая символы перевода строки
+        with open(filename, 'r') as mapFile:
+            level_map = [line.strip() for line in mapFile]
 
-    # и подсчитываем максимальную длину
-    max_width = max(map(len, level_map))
+        # и подсчитываем максимальную длину
+        max_width = max(map(len, level_map))
 
-    # дополняем каждую строку пустыми клетками ('.')
-    return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+        # дополняем каждую строку пустыми клетками ('.')
+        return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+    except Exception:
+        print('Неверный формат ввода или такого файла не существует.')
+        print('Перезапустите игру и попробуйте еще раз')
 
 
 # основной персонаж
@@ -165,7 +171,7 @@ player_image = load_image('mar.png')
 tile_width = tile_height = 50
 
 pygame.init()
-pygame.display.set_caption('Перемещение героя')
+pygame.display.set_caption('Перемещение героя. Дополнительные уровни')
 size = WIDTH, HEIGHT
 screen = pygame.display.set_mode(size)
 fps = 10  # количество кадров в секунду
@@ -174,6 +180,7 @@ running = True
 pos = None
 size = 1
 first = True
+success = True
 
 while running:  # главный игровой цикл
     for event in pygame.event.get():
@@ -182,9 +189,33 @@ while running:  # главный игровой цикл
         if first:
             start_screen()
             first = False
-            player, level_x, level_y = generate_level(load_level('map.txt'))
-            all_sprites.draw(screen)
-            tiles_group.draw(screen)
+            level = load_level(input('Введите название уровня (в формате name.txt): '))
+            if level:
+                player, level_x, level_y = generate_level(level)
+            else:
+                screen.fill(pygame.Color('Black'))
+                run = True
+                intro_text = ["Произошла ошибка", "Перезапустите игру и попробуйте еще раз"]
+
+                font = pygame.font.Font(None, 30)
+                text_coord = 50
+                for line in intro_text:
+                    string_rendered = font.render(line, 1, pygame.Color('white'))
+                    intro_rect = string_rendered.get_rect()
+                    text_coord += 10
+                    intro_rect.top = text_coord
+                    intro_rect.x = 10
+                    text_coord += intro_rect.height
+                    screen.blit(string_rendered, intro_rect)
+
+                while run:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            run = False
+                    pygame.display.flip()
+                    clock.tick(FPS)
+        all_sprites.draw(screen)
+        tiles_group.draw(screen)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
                 player_group.update('left')
@@ -198,7 +229,4 @@ while running:  # главный игровой цикл
         tiles_group.draw(screen)
         player_group.draw(screen)
     pygame.display.flip()  # смена кадра
-    # изменение игрового мира
-    # ...
-    # временная задержка
     clock.tick(fps)
