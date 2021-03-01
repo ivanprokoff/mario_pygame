@@ -76,6 +76,7 @@ player = None
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+wall_tiles = pygame.sprite.Group()
 
 
 def generate_level(level):
@@ -85,7 +86,7 @@ def generate_level(level):
             if level[y][x] == '.':
                 Tile('empty', x, y)
             elif level[y][x] == '#':
-                Tile('wall', x, y)
+                BoxTile('wall', x, y)
             elif level[y][x] == '@':
                 Tile('empty', x, y)
                 new_player = Player(x, y)
@@ -101,6 +102,15 @@ class Tile(pygame.sprite.Sprite):
             tile_width * pos_x, tile_height * pos_y)
 
 
+class BoxTile(pygame.sprite.Sprite):
+    def __init__(self, tile_type, pos_x, pos_y):
+        super().__init__(wall_tiles, all_sprites)
+        self.image = tile_images[tile_type]
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x, tile_height * pos_y)
+        self.mask = pygame.mask.from_surface(self.image)
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
@@ -109,24 +119,41 @@ class Player(pygame.sprite.Sprite):
         self.image = player_image
         self.rect = self.image.get_rect().move(
             self.pos_x, self.pos_y)
+        self.mask = pygame.mask.from_surface(self.image)
 
     def update(self, pos):
         if pos == 'left':
             self.pos_x -= 50
             self.rect = self.image.get_rect().move(
                 self.pos_x, self.pos_y)
+            if pygame.sprite.spritecollideany(self, wall_tiles):
+                self.pos_x += 50
+                self.rect = self.image.get_rect().move(
+                    self.pos_x, self.pos_y)
         if pos == 'right':
             self.pos_x += 50
             self.rect = self.image.get_rect().move(
                 self.pos_x, self.pos_y)
+            if pygame.sprite.spritecollideany(self, wall_tiles):
+                self.pos_x -= 50
+                self.rect = self.image.get_rect().move(
+                    self.pos_x, self.pos_y)
         if pos == 'up':
             self.pos_y -= 50
             self.rect = self.image.get_rect().move(
                 self.pos_x, self.pos_y)
+            if pygame.sprite.spritecollideany(self, wall_tiles):
+                self.pos_y += 50
+                self.rect = self.image.get_rect().move(
+                    self.pos_x, self.pos_y)
         if pos == 'down':
             self.pos_y += 50
             self.rect = self.image.get_rect().move(
                 self.pos_x, self.pos_y)
+            if pygame.sprite.spritecollideany(self, wall_tiles):
+                self.pos_y -= 50
+                self.rect = self.image.get_rect().move(
+                    self.pos_x, self.pos_y)
 
 
 tile_images = {
